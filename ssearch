@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+image(){
+  echo "$1" | while read roll; do
+    link="https://oa.cc.iitk.ac.in/Oa/Jsp/Photo/${roll}_0.jpg"
+    fehInput="$fehInput$link"
+    echo $link >> fehInput.txt
+  done
+  fehInput=$(cat fehInput.txt | tr "\n" " ")
+  feh $fehInput 1>/dev/null 2> /dev/null &disown
+  rm fehInput.txt
+}
+
+rollno=; name=; program=; dept=; hostel=; username=; gender=; showImage="0"
+while getopts r:n:p:id:h:u:g: option
+do
+case "$option"
+in
+r)  rollno="$OPTARG";;
+n)  name="$OPTARG";;
+p)  program="$OPTARG";;
+d)  dept="$OPTARG";;
+h)  hostel="$OPTARG";;
+u)  username="$OPTARG";;
+g)  if [ "$OPTARG" == "M" ] || [ "$OPTARG" == "m" ]; then
+      gender="M"
+    elif [ "$OPTARG" == "F" ] || [ "$OPTARG" == "f" ]; then
+      gender="F"
+    else
+      printf "Enter valid gender (M or F)"
+      exit 1
+    fi;;
+i)  command -v feh >/dev/null 2>&1 || { echo >&2 "The image option requires the program 'feh'. Remove the -i flag or install feh. Aborting"; exit 1; }
+    showImage="1";;
+?)  printf "Unknown flag %s \n" $option;;
+esac
+done
+
+echo "ROLL NO. | NAME | PROGRAM | DEPARTMENT | HOSTEL INFO | USERNAME | GENDER " >| temp.txt
+echo "======== | ========================= | ======= | ========================= | ============= | ======== | ====== " >> temp.txt
+grep -irhP "[^\|]*$rollno[^\|]* \|[^\|]*$name[^\|]* \|[^\|]*$program[^\|]* \|[^\|]*$dept[^\|]* \|[^\|]*$hostel[^\|]* \|[^\|]*$username[^\|]* \| $gender" data | sort | tee image.txt >> temp.txt
+echo "======== | ========================= | ======= | ========================= | ============= | ======== | ====== " >> temp.txt
+
+cat temp.txt | column -s "|" -t -o"|" -c50
+
+if [ "$showImage" == "1" ]; then
+  input=$(cat image.txt | cut -d "|" -f1)
+  image "$input"
+fi
+
+rm image.txt temp.txt
