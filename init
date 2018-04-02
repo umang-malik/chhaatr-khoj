@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+mkdir data
+cd data && wget --recursive -np -l 800 'https://oa.cc.iitk.ac.in/Oa/Jsp/OAServices/IITk_SrchStudRoll.jsp?selstudrol=1&selstuddep=&selstudnam='
+
+#copy files to data.
+
+for i in data/oa.cc.iitk.ac.in/Oa/Jsp/OAServices/*numtxt*
+do
+    cp $i data/
+done
+#rm -rf data/oa.cc.iitk.ac.in
+
+cd data
+ls | while read file; do
+     new=$( echo $file | cut -d "=" -f 3 | cut -d "&" -f 1 )
+     new="$new"
+     mv "$file" "$new"
+done
+
+for file in *
+do
+    rollno=$(cat $file | grep -iPA1 "<b>Roll no: </b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    name=$(cat $file | grep -iPA1 "<b>Name: </b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    program=$(cat $file | grep -iPA1 "<b>Program: </b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    dept=$(cat $file | grep -iPA1 "<b>Department: </b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    hostel=$(cat $file | grep -iPA1 "<b>Hostel Info: </b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    username=$(cat $file | grep -iPo "mailto:[a-zA-z]+@iitk.ac.in" | cut -d ":" -f2 | cut -d "@" -f1)
+    gender=$(cat $file | grep -iPA1 "<b> Gender:</b>" | sed "s/[[:space:]]\+/ /g" | tail -n 1)
+    output="$rollno | $name | $program | $dept | $hostel | $username | $gender"
+    echo $output > $file.dat
+    rm -f $file
+done
